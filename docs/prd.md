@@ -37,14 +37,22 @@ Simple pricing table format:
 |-----------|--------|---------|----------|
 | (Display clear pricing for each gaming type) |
 
+**Peak Pricing:**
+- Weekend higher pricing applies
+- Pricing adjusts automatically for weekend bookings
+
 ### 2.4 Booking Section
 Booking flow:
 1. Calendar - Select date
-2. Select time slot
+2. Select time slot (only available slots shown)
 3. Choose console type
 4. Enter name and phone number
 5. Advance payment option
 6. Confirm booking
+
+**Slot Auto Lock:**
+- Once a slot is booked, it automatically disappears from available options
+- Real-time slot availability updates
 
 Post-booking: Auto WhatsApp message confirmation sent to customer
 
@@ -69,3 +77,9 @@ Post-booking: Auto WhatsApp message confirmation sent to customer
 ### 2.8 Final CTA Section
 - Heading: Ready to Play?
 - Primary button: Book Your Slot Now
+
+### 2.9 Admin Dashboard
+Owner management capabilities:
+- Block slots (mark specific time slots as unavailable)
+- Change prices (adjust pricing for different game types and peak hours)
+- See bookings (view all customer bookings with details)

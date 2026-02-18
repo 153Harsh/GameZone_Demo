@@ -1,15 +1,23 @@
+import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { api } from '@/db/api';
+import type { Pricing } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PricingTable() {
-  const pricingData = [
-    { type: 'PS5 Pro Station', h1: '$5', h3: '$12', h5: '$18', best: false },
-    { type: 'High-End PC (RTX 4090)', h1: '$7', h3: '$18', h5: '$28', best: true },
-    { type: 'VR Arena (Wireless)', h1: '$10', h3: '$25', h5: '$40', best: false },
-    { type: 'Racing Simulator (Direct Drive)', h1: '$12', h3: '$30', h5: '$45', best: false },
-    { type: 'Multiplayer Arena (Private Room)', h1: '$20', h3: '$50', h5: '$80', best: false },
-  ];
+  const [pricing, setPricing] = useState<Pricing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPricing() {
+      const { data } = await api.getPricing();
+      if (data) setPricing(data);
+      setLoading(false);
+    }
+    loadPricing();
+  }, []);
 
   return (
     <section id="pricing" className="py-24 bg-white/5 border-y border-white/10 relative">
@@ -27,42 +35,51 @@ export default function PricingTable() {
               No Hidden <span className="gradient-text">Fees</span>
             </h2>
             <p className="text-gray-400">
-              Pick your station and enjoy competitive rates for all your gaming needs.
+              Pick your station and enjoy competitive rates for all your gaming needs. 
+              <span className="text-neonCyan font-bold ml-1">Weekend rates apply.</span>
             </p>
           </div>
 
           <div className="glass border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-            <Table>
-              <TableHeader className="bg-white/5">
-                <TableRow className="border-b border-white/10 hover:bg-transparent">
-                  <TableHead className="w-[300px] text-white font-bold h-16 text-lg">Game Type</TableHead>
-                  <TableHead className="text-center text-white font-bold h-16 text-lg">1 Hour</TableHead>
-                  <TableHead className="text-center text-white font-bold h-16 text-lg">3 Hours</TableHead>
-                  <TableHead className="text-center text-white font-bold h-16 text-lg">5 Hours</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pricingData.map((row) => (
-                  <TableRow 
-                    key={row.type} 
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${row.best ? 'bg-neonCyan/5' : ''}`}
-                  >
-                    <TableCell className="font-medium text-gray-200 py-6">
-                      <div className="flex items-center gap-3">
-                        <span className="w-1.5 h-1.5 rounded-full bg-neonCyan/50 group-hover:scale-150 transition-transform" />
-                        {row.type}
-                        {row.best && (
-                          <Badge className="ml-2 bg-neonCyan text-background text-[10px] font-bold px-1.5 py-0">POPULAR</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center text-white font-bold text-lg group-hover:text-neonCyan transition-colors">{row.h1}</TableCell>
-                    <TableCell className="text-center text-white font-bold text-lg group-hover:text-neonCyan transition-colors">{row.h3}</TableCell>
-                    <TableCell className="text-center text-white font-bold text-lg group-hover:text-neonCyan transition-colors">{row.h5}</TableCell>
-                  </TableRow>
+            {loading ? (
+              <div className="p-8 space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full bg-muted" />
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-white/5">
+                  <TableRow className="border-b border-white/10 hover:bg-transparent">
+                    <TableHead className="w-[300px] text-white font-bold h-16 text-lg">Game Type</TableHead>
+                    <TableHead className="text-center text-white font-bold h-16 text-lg">1 Hour</TableHead>
+                    <TableHead className="text-center text-white font-bold h-16 text-lg">3 Hours</TableHead>
+                    <TableHead className="text-center text-white font-bold h-16 text-lg">5 Hours</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pricing.map((row) => (
+                    <TableRow 
+                      key={row.id} 
+                      className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${row.game_type.includes('RTX 4090') ? 'bg-neonCyan/5' : ''}`}
+                    >
+                      <TableCell className="font-medium text-gray-200 py-6">
+                        <div className="flex items-center gap-3">
+                          <span className="w-1.5 h-1.5 rounded-full bg-neonCyan/50 group-hover:scale-150 transition-transform" />
+                          {row.game_type}
+                          {row.game_type.includes('RTX 4090') && (
+                            <Badge className="ml-2 bg-neonCyan text-background text-[10px] font-bold px-1.5 py-0">POPULAR</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center text-white font-bold text-lg group-hover:text-neonCyan transition-colors">${row.h1_base}</TableCell>
+                      <TableCell className="text-center text-white font-bold text-lg group-hover:text-neonCyan transition-colors">${row.h3_base}</TableCell>
+                      <TableCell className="text-center text-white font-bold text-lg group-hover:text-neonCyan transition-colors">${row.h5_base}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
 
           <div className="flex justify-center pt-8">

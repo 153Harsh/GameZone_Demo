@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Gamepad2, User, Phone, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,28 +8,66 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
+import { format, isWeekend } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { api } from '@/db/api';
+import { useAuth } from '@/contexts/AuthContext';
+import type { Pricing } from '@/types';
 
 export default function BookingSection() {
   const [step, setStep] = useState(1);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [unavailableSlots, setUnavailableSlots] = useState<string[]>([]);
+  const [pricing, setPricing] = useState<Pricing[]>([]);
   const [formData, setFormData] = useState({
     timeSlot: '',
     consoleType: '',
     name: '',
     phone: '',
   });
+  const { user } = useAuth();
+
+  useEffect(() => {
+    async function loadPricing() {
+      const { data } = await api.getPricing();
+      if (data) setPricing(data);
+    }
+    loadPricing();
+  }, []);
+
+  useEffect(() => {
+    if (date && formData.consoleType) {
+      async function checkAvailability() {
+        if (!date) return;
+        const slots = await api.getUnavailableSlots(format(date, 'yyyy-MM-dd'), formData.consoleType);
+        setUnavailableSlots(slots);
+      }
+      checkAvailability();
+    }
+  }, [date, formData.consoleType]);
 
   const timeSlots = [
     '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', 
     '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM',
   ];
 
-  const consoleTypes = [
-    'PS5 Elite Station', 'High-End PC Rig', 'VR Arena', 'Racing Simulator', 'Multiplayer Arena'
-  ];
+  const consoleTypes = pricing.map(p => p.game_type);
+
+  const calculatePrice = () => {
+    const p = pricing.find(item => item.game_type === formData.consoleType);
+    if (!p || !date) return 0;
+    
+    const multiplier = isWeekend(date) ? (p.weekend_multiplier || 1.2) : 1;
+    return {
+      h1: (p.h1_base * multiplier).toFixed(2),
+      h3: (p.h3_base * multiplier).toFixed(2),
+      h5: (p.h5_base * multiplier).toFixed(2),
+      isWeekend: isWeekend(date)
+    };
+  };
+
+  const prices = calculatePrice();
 
   const nextStep = () => {
     if (step === 1 && (!date || !formData.timeSlot)) {
@@ -45,13 +83,27 @@ export default function BookingSection() {
 
   const prevStep = () => setStep(step - 1);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) {
       toast.error('Please enter your name and phone number');
       return;
     }
     
+    const { error } = await api.createBooking({
+      date: format(date!, 'yyyy-MM-dd'),
+      time_slot: formData.timeSlot,
+      console_type: formData.consoleType,
+      customer_name: formData.name,
+      customer_phone: formData.phone,
+      profile_id: user?.id || null
+    });
+
+    if (error) {
+      toast.error('Booking failed: ' + error.message);
+      return;
+    }
+
     // Simulate WhatsApp Message
     const message = `Hello Game Zone Cafe! I'd like to book a ${formData.consoleType} slot on ${date ? format(date, 'PPP') : 'N/A'} at ${formData.timeSlot}. Name: ${formData.name}, Phone: ${formData.phone}.`;
     const whatsappUrl = `https://wa.me/1234567890?text=${encodeURIComponent(message)}`;
@@ -140,8 +192,16 @@ export default function BookingSection() {
                         </SelectTrigger>
                         <SelectContent className="bg-background border-white/10 text-white">
                           {timeSlots.map((time) => (
-                            <SelectItem key={time} value={time} className="hover:bg-neonCyan/20">
-                              {time}
+                            <SelectItem 
+                              key={time} 
+                              value={time} 
+                              disabled={unavailableSlots.includes(time)}
+                              className={cn(
+                                "hover:bg-neonCyan/20",
+                                unavailableSlots.includes(time) && "opacity-50 line-through cursor-not-allowed"
+                              )}
+                            >
+                              {time} {unavailableSlots.includes(time) && '(Occupied)'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -221,6 +281,16 @@ export default function BookingSection() {
                       <p className="text-white text-sm">
                         {formData.consoleType} on <span className="text-neonCyan">{date ? format(date, 'MMM do') : ''}</span> at <span className="text-neonCyan">{formData.timeSlot}</span>
                       </p>
+                      {prices && typeof prices !== 'number' && (
+                        <div className="pt-2 border-t border-white/5 space-y-1">
+                          <p className="text-xs text-gray-400">Estimated Pricing {prices.isWeekend && <span className="text-neonCyan font-bold">(Weekend)</span>}</p>
+                          <div className="flex justify-between text-xs text-white">
+                            <span>1 Hour: ${prices.h1}</span>
+                            <span>3 Hours: ${prices.h3}</span>
+                            <span>5 Hours: ${prices.h5}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

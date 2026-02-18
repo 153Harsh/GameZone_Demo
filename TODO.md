@@ -16,6 +16,12 @@
 - [x] Main Page Assembly
   - [x] Create `Home.tsx` and integrate all sections
   - [x] Update `routes.tsx` to set Home as the default route
+- [x] Advanced Features (Database & Admin)
+  - [x] Supabase Initialization & Table Schema
+  - [x] Auth Implementation (Login/SignUp with username)
+  - [x] Peak Pricing Logic (Weekend multiplier)
+  - [x] Slot Auto Lock (Dynamic availability check)
+  - [x] Admin Dashboard (Manage pricing, view bookings, block slots)
 - [x] Final Polish
   - [x] Add smooth scrolling and animations
   - [x] Ensure mobile responsiveness
