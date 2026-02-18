@@ -23,6 +23,7 @@ export default function BookingSection() {
   const [formData, setFormData] = useState({
     timeSlot: '',
     consoleType: '',
+    hours: 1,
     name: '',
     phone: '',
   });
@@ -56,18 +57,38 @@ export default function BookingSection() {
 
   const calculatePrice = () => {
     const p = pricing.find(item => item.game_type === formData.consoleType);
-    if (!p || !date) return 0;
+    if (!p || !date) return null;
     
     const multiplier = isWeekend(date) ? (p.weekend_multiplier || 1.2) : 1;
+    const hours = formData.hours;
+    
+    // Calculate price based on hours
+    let basePrice = 0;
+    if (hours === 1) {
+      basePrice = p.h1_base;
+    } else if (hours === 2) {
+      basePrice = p.h1_base * 2 * 0.95; // 5% discount for 2 hours
+    } else if (hours === 3) {
+      basePrice = p.h3_base;
+    } else if (hours === 4) {
+      basePrice = p.h3_base + p.h1_base * 0.9; // 3h price + 1h with 10% discount
+    } else if (hours === 5) {
+      basePrice = p.h5_base;
+    } else {
+      // For 6+ hours, use 5h base + additional hours at discounted rate
+      basePrice = p.h5_base + (hours - 5) * p.h1_base * 0.85;
+    }
+    
+    const finalPrice = (basePrice * multiplier).toFixed(2);
+    
     return {
-      h1: (p.h1_base * multiplier).toFixed(2),
-      h3: (p.h3_base * multiplier).toFixed(2),
-      h5: (p.h5_base * multiplier).toFixed(2),
-      isWeekend: isWeekend(date)
+      price: finalPrice,
+      isWeekend: isWeekend(date),
+      hours: hours
     };
   };
 
-  const prices = calculatePrice();
+  const priceInfo = calculatePrice();
 
   const nextStep = () => {
     if (step === 1 && (!date || !formData.timeSlot)) {
@@ -76,6 +97,10 @@ export default function BookingSection() {
     }
     if (step === 2 && !formData.consoleType) {
       toast.error('Please select a console type');
+      return;
+    }
+    if (step === 3 && !formData.hours) {
+      toast.error('Please select duration');
       return;
     }
     setStep(step + 1);
@@ -90,12 +115,16 @@ export default function BookingSection() {
       return;
     }
     
+    const totalPrice = priceInfo ? parseFloat(priceInfo.price) : 0;
+    
     const { error } = await api.createBooking({
       date: format(date!, 'yyyy-MM-dd'),
       time_slot: formData.timeSlot,
       console_type: formData.consoleType,
       customer_name: formData.name,
       customer_phone: formData.phone,
+      duration_hours: formData.hours,
+      total_price: totalPrice,
       profile_id: user?.id || null
     });
 
@@ -105,13 +134,13 @@ export default function BookingSection() {
     }
 
     // Simulate WhatsApp Message
-    const message = `Hello Game Zone Cafe! I'd like to book a ${formData.consoleType} slot on ${date ? format(date, 'PPP') : 'N/A'} at ${formData.timeSlot}. Name: ${formData.name}, Phone: ${formData.phone}.`;
+    const message = `Hello Game Zone Cafe! I'd like to book a ${formData.consoleType} slot on ${date ? format(date, 'PPP') : 'N/A'} at ${formData.timeSlot} for ${formData.hours} hour(s). Total: $${totalPrice}. Name: ${formData.name}, Phone: ${formData.phone}.`;
     const whatsappUrl = `https://wa.me/1234567890?text=${encodeURIComponent(message)}`;
     
     toast.success('Booking Successful! Redirecting to WhatsApp for confirmation...');
     setTimeout(() => {
       window.open(whatsappUrl, '_blank');
-      setStep(4);
+      setStep(5);
     }, 1500);
   };
 
@@ -130,19 +159,21 @@ export default function BookingSection() {
 
             <CardHeader className="text-center pt-10">
               <Badge variant="outline" className="w-fit mx-auto border-neonCyan text-neonCyan mb-4">
-                Step {step === 4 ? 3 : step} of 3
+                Step {step === 5 ? 4 : step} of 4
               </Badge>
               <CardTitle className="text-3xl font-black text-white">
                 {step === 1 && 'Select Date & Time'}
                 {step === 2 && 'Choose Your Arena'}
-                {step === 3 && 'Enter Your Details'}
-                {step === 4 && 'Booking Confirmed!'}
+                {step === 3 && 'Select Duration'}
+                {step === 4 && 'Enter Your Details'}
+                {step === 5 && 'Booking Confirmed!'}
               </CardTitle>
               <CardDescription className="text-gray-400">
                 {step === 1 && 'When do you want to play?'}
                 {step === 2 && 'Which setup do you prefer?'}
-                {step === 3 && 'Almost there! Just a few more details.'}
-                {step === 4 && 'Your slot has been reserved. See you soon!'}
+                {step === 3 && 'How many hours do you need?'}
+                {step === 4 && 'Almost there! Just a few more details.'}
+                {step === 5 && 'Your slot has been reserved. See you soon!'}
               </CardDescription>
             </CardHeader>
 
@@ -251,6 +282,64 @@ export default function BookingSection() {
               )}
 
               {step === 3 && (
+                <div className="space-y-8 animate-fade-in">
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2 mb-8">
+                      <h3 className="text-xl font-bold text-white">How long do you want to play?</h3>
+                      <p className="text-gray-400 text-sm">Select the number of hours for your gaming session</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((hour) => (
+                        <div
+                          key={hour}
+                          onClick={() => setFormData({...formData, hours: hour})}
+                          className={cn(
+                            "group p-6 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center gap-2 hover:scale-105",
+                            formData.hours === hour
+                              ? "bg-neonPurple/20 border-neonPurple shadow-[0_0_20px_hsla(var(--neon-purple),0.3)]"
+                              : "bg-white/5 border-white/10 hover:border-white/30"
+                          )}
+                        >
+                          <Clock className={cn(
+                            "w-8 h-8 transition-colors",
+                            formData.hours === hour ? "text-neonPurple" : "text-gray-400 group-hover:text-neonCyan"
+                          )} />
+                          <span className={cn(
+                            "text-2xl font-black transition-colors",
+                            formData.hours === hour ? "text-white" : "text-gray-300"
+                          )}>
+                            {hour}
+                          </span>
+                          <span className="text-xs text-gray-500 uppercase tracking-widest">
+                            {hour === 1 ? 'Hour' : 'Hours'}
+                          </span>
+                          {formData.hours === hour && (
+                            <CheckCircle2 className="w-5 h-5 text-neonPurple absolute top-2 right-2" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {priceInfo && (
+                      <div className="p-6 rounded-xl bg-neonCyan/10 border border-neonCyan/30 text-center space-y-2 mt-8">
+                        <p className="text-xs font-bold text-neonCyan uppercase tracking-widest">Estimated Total</p>
+                        <p className="text-4xl font-black text-white">${priceInfo.price}</p>
+                        <p className="text-xs text-gray-400">
+                          {formData.hours} hour(s) • {formData.consoleType}
+                          {priceInfo.isWeekend && <span className="text-neonCyan font-bold ml-1">(Weekend Rate)</span>}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-4">
+                    <Button variant="outline" onClick={prevStep} className="flex-1 h-12 border-white/10 hover:bg-white/5">Back</Button>
+                    <Button onClick={nextStep} className="flex-[2] h-12 bg-neonPurple hover:bg-neonPurple/80 text-white font-bold">Continue</Button>
+                  </div>
+                </div>
+              )}
+
+              {step === 4 && (
                 <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
                   <div className="space-y-6">
                     <div className="space-y-3">
@@ -281,14 +370,19 @@ export default function BookingSection() {
                       <p className="text-white text-sm">
                         {formData.consoleType} on <span className="text-neonCyan">{date ? format(date, 'MMM do') : ''}</span> at <span className="text-neonCyan">{formData.timeSlot}</span>
                       </p>
-                      {prices && typeof prices !== 'number' && (
+                      {priceInfo && (
                         <div className="pt-2 border-t border-white/5 space-y-1">
-                          <p className="text-xs text-gray-400">Estimated Pricing {prices.isWeekend && <span className="text-neonCyan font-bold">(Weekend)</span>}</p>
-                          <div className="flex justify-between text-xs text-white">
-                            <span>1 Hour: ${prices.h1}</span>
-                            <span>3 Hours: ${prices.h3}</span>
-                            <span>5 Hours: ${prices.h5}</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-400">Duration:</span>
+                            <span className="text-sm text-white font-bold">{formData.hours} hour(s)</span>
                           </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-400">Total Price:</span>
+                            <span className="text-lg text-neonCyan font-black">${priceInfo.price}</span>
+                          </div>
+                          {priceInfo.isWeekend && (
+                            <p className="text-[10px] text-neonCyan font-bold uppercase tracking-wider">Weekend Rate Applied</p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -303,7 +397,7 @@ export default function BookingSection() {
                 </form>
               )}
 
-              {step === 4 && (
+              {step === 5 && (
                 <div className="text-center space-y-8 py-10 animate-fade-in">
                   <div className="w-24 h-24 rounded-full bg-neonCyan/20 border-2 border-neonCyan flex items-center justify-center mx-auto shadow-[0_0_30px_hsla(var(--neon-cyan),0.3)]">
                     <CheckCircle2 className="w-12 h-12 text-neonCyan" />

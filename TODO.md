@@ -22,6 +22,7 @@
   - [x] Peak Pricing Logic (Weekend multiplier)
   - [x] Slot Auto Lock (Dynamic availability check)
   - [x] Admin Dashboard (Manage pricing, view bookings, block slots)
+  - [x] Hour Selection Feature (1-8 hours with dynamic pricing)
 - [x] Final Polish
   - [x] Add smooth scrolling and animations
   - [x] Ensure mobile responsiveness
@@ -29,4 +30,6 @@
 
 ## Notes
 - Theme: Dark background with Neon Purple (#a855f7) and Neon Cyan (#06b6d4) accents.
-- No Supabase needed, handle booking states locally (mock confirmation).
+- Admin credentials: First registered user becomes admin automatically.
+- Hour selection: Users can select 1-8 hours with automatic price calculation including weekend multipliers.
+- Booking flow: Date → Time → Console → Hours → Details → Confirmation

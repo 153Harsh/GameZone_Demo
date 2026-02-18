@@ -33,8 +33,8 @@ Each option includes:
 ### 2.3 Pricing Section
 Simple pricing table format:
 
-| Game Type | 1 Hour | 3 Hours | 5 Hours |
-|-----------|--------|---------|----------|
+| Game Type | 1 Hour | 2 Hours | 3 Hours | 5 Hours |
+|-----------|--------|---------|---------|----------|
 | (Display clear pricing for each gaming type) |
 
 **Peak Pricing:**
@@ -46,9 +46,10 @@ Booking flow:
 1. Calendar - Select date
 2. Select time slot (only available slots shown)
 3. Choose console type
-4. Enter name and phone number
-5. Advance payment option
-6. Confirm booking
+4. Select duration (1 hour, 2 hours, 3 hours, 5 hours)
+5. Enter name and phone number
+6. Advance payment option
+7. Confirm booking
 
 **Slot Auto Lock:**
 - Once a slot is booked, it automatically disappears from available options

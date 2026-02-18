@@ -132,9 +132,11 @@ export default function AdminDashboard() {
                     <TableRow className="border-white/10 hover:bg-transparent">
                       <TableHead className="text-white">Date</TableHead>
                       <TableHead className="text-white">Time</TableHead>
+                      <TableHead className="text-white">Duration</TableHead>
                       <TableHead className="text-white">Console</TableHead>
                       <TableHead className="text-white">Customer</TableHead>
                       <TableHead className="text-white">Phone</TableHead>
+                      <TableHead className="text-white">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -142,11 +144,13 @@ export default function AdminDashboard() {
                       <TableRow key={booking.id} className="border-white/5 hover:bg-white/5">
                         <TableCell className="text-gray-300 font-medium">{format(new Date(booking.date), 'MMM dd, yyyy')}</TableCell>
                         <TableCell className="text-gray-300">{booking.time_slot}</TableCell>
+                        <TableCell className="text-neonCyan font-bold">{booking.duration_hours}h</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="border-neonCyan text-neonCyan">{booking.console_type}</Badge>
                         </TableCell>
                         <TableCell className="text-white font-bold">{booking.customer_name}</TableCell>
                         <TableCell className="text-gray-400">{booking.customer_phone}</TableCell>
+                        <TableCell className="text-neonPurple font-bold">${booking.total_price?.toFixed(2) || 'N/A'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

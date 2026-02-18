@@ -33,6 +33,8 @@ export interface Booking {
   customer_name: string;
   customer_phone: string;
   profile_id: string | null;
+  duration_hours: number;
+  total_price: number | null;
   created_at: string;
 }
 
