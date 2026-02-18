@@ -40,6 +40,8 @@ export default {
                     DEFAULT: 'hsl(var(--secondary))',
                     foreground: 'hsl(var(--secondary-foreground))'
                 },
+                neonPurple: "hsl(var(--neon-purple))",
+                neonCyan: "hsl(var(--neon-cyan))",
                 destructive: {
                     DEFAULT: 'hsl(var(--destructive))',
                     foreground: 'hsl(var(--destructive-foreground))'

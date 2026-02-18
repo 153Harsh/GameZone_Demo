@@ -29,7 +29,7 @@ const App: React.FC = () => {
           </Routes>
         </main>
       </div>
-      <Toaster />
+      <Toaster position="bottom-right" richColors theme="dark" />
       {/*</RouteGuard>*/}
       {/*</AuthProvider>*/}
     </Router>
